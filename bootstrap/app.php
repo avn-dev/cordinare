@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->validateCsrfTokens(except: [
+            'my/check-in',
+            'my/time-entries/*/check-out',
+        ]);
 
         $middleware->web(append: [
             HandleAppearance::class,

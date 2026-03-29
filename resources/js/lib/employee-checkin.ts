@@ -15,13 +15,20 @@ function csrfToken(): string {
     return meta?.content ?? '';
 }
 
+function xsrfToken(): string {
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
 export async function postCheckIn(payload: CheckInPayload) {
     const response = await fetch(employeeRoute.checkIn().url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': csrfToken(),
+            'X-XSRF-TOKEN': xsrfToken(),
         },
         credentials: 'same-origin',
         body: JSON.stringify(payload),
@@ -40,8 +47,10 @@ export async function postCheckOut(timeEntryId: number, payload: CheckOutPayload
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': csrfToken(),
+            'X-XSRF-TOKEN': xsrfToken(),
         },
         credentials: 'same-origin',
         body: JSON.stringify(payload),
