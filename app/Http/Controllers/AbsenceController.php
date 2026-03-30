@@ -97,9 +97,7 @@ class AbsenceController extends Controller
 
         Absence::create($payload);
 
-        return redirect()
-            ->route('absences.index')
-            ->with('success', 'Abwesenheit angelegt.');
+        return $this->redirectAfterMutation($user, 'Abwesenheit angelegt.');
     }
 
     public function edit(Absence $absence, Request $request)
@@ -132,20 +130,17 @@ class AbsenceController extends Controller
 
         $absence->update($payload);
 
-        return redirect()
-            ->route('absences.index')
-            ->with('success', 'Abwesenheit aktualisiert.');
+        return $this->redirectAfterMutation($user, 'Abwesenheit aktualisiert.');
     }
 
     public function destroy(Absence $absence)
     {
         $this->authorize('delete', $absence);
 
+        $user = request()->user();
         $absence->delete();
 
-        return redirect()
-            ->route('absences.index')
-            ->with('success', 'Abwesenheit gelöscht.');
+        return $this->redirectAfterMutation($user, 'Abwesenheit gelöscht.');
     }
 
     public function export(Request $request)
@@ -191,6 +186,15 @@ class AbsenceController extends Controller
         return User::query()
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
+    }
+
+    private function redirectAfterMutation(?User $user, string $message)
+    {
+        $route = $this->canAssignUser($user) ? 'absences.index' : 'employee.portal';
+
+        return redirect()
+            ->route($route)
+            ->with('success', $message);
     }
 
 }
