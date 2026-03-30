@@ -19,6 +19,7 @@ class Site extends Model
         'customer_id',
         'name',
         'status',
+        'starts_on',
         'address_line1',
         'address_line2',
         'postal_code',
@@ -34,6 +35,7 @@ class Site extends Model
 
     protected $casts = [
         'time_windows' => 'array',
+        'starts_on' => 'date',
         'latitude' => 'decimal:7',
         'longitude' => 'decimal:7',
     ];

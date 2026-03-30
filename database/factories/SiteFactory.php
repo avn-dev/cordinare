@@ -23,6 +23,7 @@ class SiteFactory extends Factory
             'customer_id' => Customer::factory(),
             'name' => fake()->company().' Standort',
             'status' => 'active',
+            'starts_on' => fake()->optional()->dateTimeBetween('-1 month', '+2 months')?->format('Y-m-d'),
             'address_line1' => fake()->streetAddress(),
             'address_line2' => fake()->optional()->secondaryAddress(),
             'postal_code' => fake()->postcode(),

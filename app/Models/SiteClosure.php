@@ -15,7 +15,10 @@ class SiteClosure extends Model
     protected $fillable = [
         'tenant_id',
         'site_id',
+        'closure_type',
         'day_of_week',
+        'starts_on',
+        'ends_on',
         'starts_at',
         'ends_at',
         'label',
@@ -23,6 +26,8 @@ class SiteClosure extends Model
 
     protected $casts = [
         'day_of_week' => 'integer',
+        'starts_on' => 'date',
+        'ends_on' => 'date',
     ];
 
     public function site(): BelongsTo

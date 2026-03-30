@@ -205,7 +205,18 @@ class ShiftTemplateController extends Controller
             $dayOfWeek = $current->dayOfWeekIso - 1;
             $closures = SiteClosure::query()
                 ->where('site_id', $siteId)
-                ->where('day_of_week', $dayOfWeek)
+                ->where(function ($query) use ($current, $dayOfWeek) {
+                    $query
+                        ->where(function ($weekly) use ($dayOfWeek) {
+                            $weekly->where('closure_type', 'weekly')
+                                ->where('day_of_week', $dayOfWeek);
+                        })
+                        ->orWhere(function ($dateRange) use ($current) {
+                            $dateRange->where('closure_type', 'date_range')
+                                ->whereDate('starts_on', '<=', $current->toDateString())
+                                ->whereDate('ends_on', '>=', $current->toDateString());
+                        });
+                })
                 ->get();
 
             foreach ($closures as $closure) {
@@ -268,6 +279,10 @@ class ShiftTemplateController extends Controller
                     $date = $startOfWeek->copy()->addWeeks($week)->addDays($block['day_of_week']);
                     $startsAt = Carbon::parse($date->format('Y-m-d').' '.$block['starts_at'], $timezone);
                     $endsAt = Carbon::parse($date->format('Y-m-d').' '.$block['ends_at'], $timezone);
+
+                    if ($template->site?->starts_on && $startsAt->lt($template->site->starts_on->copy()->startOfDay())) {
+                        continue;
+                    }
 
                     if ($this->overlapsClosure($template->site_id, $startsAt, $endsAt)) {
                         continue;

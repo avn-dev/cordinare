@@ -23,6 +23,7 @@ class SiteResource extends JsonResource
             ]),
             'name' => $this->name,
             'status' => $this->status,
+            'starts_on' => $this->starts_on?->toDateString(),
             'address_line1' => $this->address_line1,
             'address_line2' => $this->address_line2,
             'postal_code' => $this->postal_code,
@@ -35,7 +36,10 @@ class SiteResource extends JsonResource
             'closures' => $this->whenLoaded('closures', function () {
                 return $this->closures->map(fn ($closure) => [
                     'id' => $closure->id,
+                    'closure_type' => $closure->closure_type ?? 'weekly',
                     'day_of_week' => $closure->day_of_week,
+                    'starts_on' => $closure->starts_on?->toDateString(),
+                    'ends_on' => $closure->ends_on?->toDateString(),
                     'starts_at' => $closure->starts_at,
                     'ends_at' => $closure->ends_at,
                     'label' => $closure->label,

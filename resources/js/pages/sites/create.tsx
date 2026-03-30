@@ -14,6 +14,15 @@ type Props = {
 };
 
 const dayLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+type Closure = {
+    closure_type: 'weekly' | 'date_range';
+    day_of_week: number;
+    starts_on: string;
+    ends_on: string;
+    starts_at: string;
+    ends_at: string;
+    label?: string;
+};
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Objekte', href: sitesRoute.index().url },
@@ -25,6 +34,7 @@ export default function SiteCreate({ customers, defaults }: Props) {
         customer_id: defaults?.customer_id ?? customers[0]?.id ?? '',
         name: '',
         status: 'active',
+        starts_on: '',
         address_line1: '',
         address_line2: '',
         postal_code: '',
@@ -34,19 +44,34 @@ export default function SiteCreate({ customers, defaults }: Props) {
         longitude: '',
         access_notes: '',
         special_instructions: '',
-        closures: [] as { day_of_week: number; starts_at: string; ends_at: string; label?: string }[],
+        closures: [] as Closure[],
     });
 
     const addClosure = () => {
         setData('closures', [
             ...data.closures,
-            { day_of_week: 0, starts_at: '00:00', ends_at: '00:00', label: '' },
+            {
+                closure_type: 'weekly',
+                day_of_week: 0,
+                starts_on: '',
+                ends_on: '',
+                starts_at: '00:00',
+                ends_at: '00:00',
+                label: '',
+            },
         ]);
     };
 
-    const updateClosure = (index: number, key: 'day_of_week' | 'starts_at' | 'ends_at' | 'label', value: string | number) => {
+    const updateClosure = (index: number, key: keyof Closure, value: string | number) => {
         const next = [...data.closures];
         next[index] = { ...next[index], [key]: value };
+        if (key === 'closure_type' && value === 'weekly') {
+            next[index].starts_on = '';
+            next[index].ends_on = '';
+        }
+        if (key === 'closure_type' && value === 'date_range') {
+            next[index].day_of_week = 0;
+        }
         setData('closures', next);
     };
 
@@ -106,6 +131,16 @@ export default function SiteCreate({ customers, defaults }: Props) {
                             <option value="active">Aktiv</option>
                             <option value="inactive">Inaktiv</option>
                         </select>
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium">Startdatum Objekt</label>
+                        <input
+                            type="date"
+                            className="mt-2 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                            value={data.starts_on}
+                            onChange={(e) => setData('starts_on', e.target.value)}
+                        />
+                        {errors.starts_on && <div className="mt-1 text-xs text-red-600">{errors.starts_on}</div>}
                     </div>
                     <div>
                         <label className="text-sm font-medium">Adresse</label>
@@ -200,21 +235,55 @@ export default function SiteCreate({ customers, defaults }: Props) {
                             <div className="text-sm text-muted-foreground">Keine Schließzeiten hinterlegt.</div>
                         ) : (
                             data.closures.map((closure, index) => (
-                                <div key={`${closure.day_of_week}-${index}`} className="grid gap-2 md:grid-cols-5">
+                                <div key={`${closure.closure_type}-${index}`} className="grid gap-2 md:grid-cols-6">
                                     <div>
-                                        <label className="text-xs font-semibold text-muted-foreground">Tag</label>
+                                        <label className="text-xs font-semibold text-muted-foreground">Typ</label>
                                         <select
                                             className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                                            value={closure.day_of_week}
-                                            onChange={(e) => updateClosure(index, 'day_of_week', Number(e.target.value))}
+                                            value={closure.closure_type}
+                                            onChange={(e) => updateClosure(index, 'closure_type', e.target.value)}
                                         >
-                                            {dayLabels.map((label, idx) => (
-                                                <option key={label} value={idx}>
-                                                    {label}
-                                                </option>
-                                            ))}
+                                            <option value="weekly">Wöchentlich</option>
+                                            <option value="date_range">Datumsbereich</option>
                                         </select>
                                     </div>
+                                    {closure.closure_type === 'weekly' ? (
+                                        <div>
+                                            <label className="text-xs font-semibold text-muted-foreground">Tag</label>
+                                            <select
+                                                className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                                                value={closure.day_of_week}
+                                                onChange={(e) => updateClosure(index, 'day_of_week', Number(e.target.value))}
+                                            >
+                                                {dayLabels.map((label, idx) => (
+                                                    <option key={label} value={idx}>
+                                                        {label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div>
+                                                <label className="text-xs font-semibold text-muted-foreground">Startdatum</label>
+                                                <input
+                                                    type="date"
+                                                    className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                                                    value={closure.starts_on}
+                                                    onChange={(e) => updateClosure(index, 'starts_on', e.target.value)}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-semibold text-muted-foreground">Enddatum</label>
+                                                <input
+                                                    type="date"
+                                                    className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                                                    value={closure.ends_on}
+                                                    onChange={(e) => updateClosure(index, 'ends_on', e.target.value)}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
                                     <div>
                                         <label className="text-xs font-semibold text-muted-foreground">Von</label>
                                         <input

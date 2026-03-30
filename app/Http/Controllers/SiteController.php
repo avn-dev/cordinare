@@ -138,11 +138,23 @@ class SiteController extends Controller
 
         $payload = [];
         foreach ($closures as $closure) {
-            if (! isset($closure['day_of_week'], $closure['starts_at'], $closure['ends_at'])) {
+            if (! isset($closure['closure_type'], $closure['starts_at'], $closure['ends_at'])) {
                 continue;
             }
+
+            $closureType = $closure['closure_type'];
+            if ($closureType === 'weekly' && ! isset($closure['day_of_week'])) {
+                continue;
+            }
+            if ($closureType === 'date_range' && (! isset($closure['starts_on']) || ! isset($closure['ends_on']))) {
+                continue;
+            }
+
             $payload[] = [
-                'day_of_week' => (int) $closure['day_of_week'],
+                'closure_type' => $closureType,
+                'day_of_week' => (int) ($closure['day_of_week'] ?? 0),
+                'starts_on' => $closure['starts_on'] ?? null,
+                'ends_on' => $closure['ends_on'] ?? null,
                 'starts_at' => $closure['starts_at'],
                 'ends_at' => $closure['ends_at'],
                 'label' => $closure['label'] ?? null,
