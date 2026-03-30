@@ -115,7 +115,7 @@ export default function ShiftTemplatesIndex({ templates, filters, sites }: Props
     };
 
     const confirmDelete = (templateId: number) => {
-        if (!window.confirm('Vorlage wirklich löschen? Bereits erzeugte Schichten bleiben bestehen.')) {
+        if (!window.confirm('Vorlage wirklich löschen? Zukünftige, noch nicht bearbeitete Schichten aus dieser Vorlage werden ebenfalls entfernt.')) {
             return;
         }
         router.delete(shiftTemplatesRoute.destroy(templateId).url, { preserveScroll: true, replace: true });

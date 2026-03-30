@@ -78,7 +78,7 @@ export default function ShiftTemplateEdit({ template, sites, users }: Props) {
     };
 
     const confirmDelete = () => {
-        if (!window.confirm('Vorlage wirklich löschen? Bereits erzeugte Schichten bleiben bestehen.')) {
+        if (!window.confirm('Vorlage wirklich löschen? Zukünftige, noch nicht bearbeitete Schichten aus dieser Vorlage werden ebenfalls entfernt.')) {
             return;
         }
         router.delete(shiftTemplatesRoute.destroy(template.id).url, { replace: true });

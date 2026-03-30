@@ -172,9 +172,39 @@ class ShiftTemplateController extends Controller
     {
         $this->authorize('delete', $shiftTemplate);
 
-        $shiftTemplate->delete();
+        $deletedFutureShifts = 0;
 
-        return redirect()->route('shift-templates.index');
+        DB::transaction(function () use ($shiftTemplate, &$deletedFutureShifts) {
+            $now = now();
+
+            $futureShiftIds = Shift::query()
+                ->where('shift_template_id', $shiftTemplate->id)
+                ->where('starts_at', '>=', $now)
+                ->whereDoesntHave('timeEntries')
+                ->pluck('id');
+
+            if ($futureShiftIds->isNotEmpty()) {
+                $deletedFutureShifts = $futureShiftIds->count();
+                Shift::query()
+                    ->whereIn('id', $futureShiftIds)
+                    ->delete();
+            }
+
+            Shift::query()
+                ->where('shift_template_id', $shiftTemplate->id)
+                ->update(['shift_template_id' => null]);
+
+            $shiftTemplate->users()->detach();
+            $shiftTemplate->delete();
+        });
+
+        $message = $deletedFutureShifts > 0
+            ? "Vorlage gelöscht. {$deletedFutureShifts} zukünftige Schichten wurden ebenfalls entfernt."
+            : 'Vorlage gelöscht.';
+
+        return redirect()
+            ->route('shift-templates.index')
+            ->with('success', $message);
     }
 
     public function generate(Request $request)
