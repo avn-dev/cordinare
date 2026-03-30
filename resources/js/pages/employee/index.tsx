@@ -518,6 +518,112 @@ export default function EmployeePortal({
                         )}
                     </div>
                 </div>
+
+                <div className="rounded-xl border border-border/60 bg-background p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h2 className="text-sm font-semibold">Abwesenheit beantragen</h2>
+                            <p className="text-xs text-muted-foreground">Urlaub oder Krankheit direkt einreichen.</p>
+                        </div>
+                    </div>
+
+                    <form onSubmit={submitAbsence} className="mt-4 grid gap-3 md:grid-cols-2">
+                        <div>
+                            <label className="text-xs font-semibold text-muted-foreground">Typ</label>
+                            <select
+                                className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                                value={absenceForm.data.type}
+                                onChange={(e) => absenceForm.setData('type', e.target.value)}
+                            >
+                                <option value="vacation">Urlaub</option>
+                                <option value="sick">Krank</option>
+                                <option value="other">Sonstiges</option>
+                            </select>
+                            {absenceForm.errors.type && (
+                                <div className="mt-1 text-xs text-rose-600">{absenceForm.errors.type}</div>
+                            )}
+                        </div>
+                        <div />
+                        <div>
+                            <label className="text-xs font-semibold text-muted-foreground">Von</label>
+                            <input
+                                type="date"
+                                className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                                value={absenceForm.data.starts_on}
+                                onChange={(e) => absenceForm.setData('starts_on', e.target.value)}
+                            />
+                            {absenceForm.errors.starts_on && (
+                                <div className="mt-1 text-xs text-rose-600">{absenceForm.errors.starts_on}</div>
+                            )}
+                        </div>
+                        <div>
+                            <label className="text-xs font-semibold text-muted-foreground">Bis</label>
+                            <input
+                                type="date"
+                                className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                                value={absenceForm.data.ends_on}
+                                onChange={(e) => absenceForm.setData('ends_on', e.target.value)}
+                            />
+                            {absenceForm.errors.ends_on && (
+                                <div className="mt-1 text-xs text-rose-600">{absenceForm.errors.ends_on}</div>
+                            )}
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="text-xs font-semibold text-muted-foreground">Notiz</label>
+                            <textarea
+                                className="mt-1 min-h-24 w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                                value={absenceForm.data.notes}
+                                onChange={(e) => absenceForm.setData('notes', e.target.value)}
+                            />
+                            {absenceForm.errors.notes && (
+                                <div className="mt-1 text-xs text-rose-600">{absenceForm.errors.notes}</div>
+                            )}
+                        </div>
+                        <div className="md:col-span-2">
+                            <button
+                                type="submit"
+                                disabled={absenceForm.processing}
+                                className={`rounded-md px-4 py-2 text-sm font-semibold text-white ${
+                                    absenceForm.processing ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500'
+                                }`}
+                            >
+                                {absenceForm.processing ? 'Sende…' : 'Abwesenheit beantragen'}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div className="mt-6">
+                        <h3 className="text-sm font-semibold">Letzte Anträge</h3>
+                        <div className="mt-3 space-y-2">
+                            {absences.length === 0 ? (
+                                <div className="text-sm text-muted-foreground">Noch keine Abwesenheiten eingereicht.</div>
+                            ) : (
+                                absences.map((absence) => (
+                                    <div
+                                        key={absence.id}
+                                        className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 px-3 py-2"
+                                    >
+                                        <div>
+                                            <div className="text-sm font-semibold text-foreground">
+                                                {absence.type === 'vacation'
+                                                    ? 'Urlaub'
+                                                    : absence.type === 'sick'
+                                                      ? 'Krank'
+                                                      : absence.type}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {formatDate(absence.starts_on)} – {formatDate(absence.ends_on)}
+                                            </div>
+                                        </div>
+                                        <div className="text-xs font-semibold text-muted-foreground">
+                                            {absence.status}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
         </AppLayout>
     );
