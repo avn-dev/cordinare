@@ -16,6 +16,10 @@ type Shift = {
     starts_at: string;
     ends_at: string;
     status: string;
+    has_time_entry?: boolean;
+    is_open?: boolean;
+    checked_in_at?: string | null;
+    checked_out_at?: string | null;
     site?: { id: number; name: string } | null;
 };
 
@@ -47,6 +51,7 @@ type Absence = {
 
 type Props = {
     upcoming_shifts: Shift[];
+    today_shifts: Shift[];
     open_entry: TimeEntry | null;
     recent_entries: TimeEntry[];
     summary: {
@@ -111,6 +116,7 @@ async function getLocation(): Promise<{ latitude: number; longitude: number; acc
 
 export default function EmployeePortal({
     upcoming_shifts,
+    today_shifts,
     open_entry,
     recent_entries,
     summary,
@@ -154,7 +160,7 @@ export default function EmployeePortal({
                 longitude: location?.longitude ?? null,
                 accuracy: location?.accuracy ?? null,
             });
-            router.reload({ only: ['open_entry', 'recent_entries', 'summary', 'absences', 'upcoming_shifts'], preserveScroll: true });
+            router.reload({ only: ['open_entry', 'recent_entries', 'summary', 'absences', 'upcoming_shifts', 'today_shifts'], preserveScroll: true });
         } catch (error: any) {
             if (error?.errors) {
                 checkInForm.setError(error.errors);
@@ -181,7 +187,7 @@ export default function EmployeePortal({
                 longitude: location?.longitude ?? null,
                 accuracy: location?.accuracy ?? null,
             });
-            router.reload({ only: ['open_entry', 'recent_entries', 'summary', 'absences', 'upcoming_shifts'], preserveScroll: true });
+            router.reload({ only: ['open_entry', 'recent_entries', 'summary', 'absences', 'upcoming_shifts', 'today_shifts'], preserveScroll: true });
         } catch (error: any) {
             if (error?.errors) {
                 checkOutForm.setError(error.errors);
@@ -270,6 +276,34 @@ export default function EmployeePortal({
             date,
             shifts: shifts.sort((a, b) => a.starts_at.localeCompare(b.starts_at)),
         }));
+
+    const todayStatusTone = (shift: Shift) => {
+        if (shift.is_open) {
+            return 'bg-emerald-100 text-emerald-700';
+        }
+
+        if (shift.checked_out_at) {
+            return 'bg-slate-100 text-slate-500';
+        }
+
+        return 'bg-amber-100 text-amber-700';
+    };
+
+    const todayStatusLabel = (shift: Shift) => {
+        if (shift.is_open) {
+            return 'Läuft';
+        }
+
+        if (shift.checked_out_at) {
+            return 'Erledigt';
+        }
+
+        if (shift.has_time_entry) {
+            return 'Eingecheckt';
+        }
+
+        return 'Offen';
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -363,6 +397,48 @@ export default function EmployeePortal({
                     ) : (
                         <div className="mt-4 text-sm text-muted-foreground">Keine Schichten geplant.</div>
                     )}
+
+                    <div className="mt-6">
+                        <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Heute</div>
+                        <div className="mt-3 space-y-2">
+                            {today_shifts.length === 0 ? (
+                                <div className="text-sm text-muted-foreground">Heute sind keine Aufträge geplant.</div>
+                            ) : (
+                                today_shifts.map((shift) => {
+                                    const canCheckIn = !open_entry && !shift.has_time_entry;
+
+                                    return (
+                                        <div key={shift.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 p-3">
+                                            <div className="min-w-0">
+                                                <div className="font-semibold">{shift.title ?? 'Schicht'}</div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    {formatDateTime(shift.starts_at)} – {formatDateTime(shift.ends_at)}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">{shift.site?.name ?? '—'}</div>
+                                            </div>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${todayStatusTone(shift)}`}>
+                                                    {todayStatusLabel(shift)}
+                                                </span>
+                                                {canCheckIn && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCheckIn(shift.id)}
+                                                        disabled={checking}
+                                                        className={`rounded-md px-3 py-2 text-xs font-semibold text-white ${
+                                                            checking ? 'bg-slate-400 cursor-not-allowed' : 'bg-emerald-600'
+                                                        }`}
+                                                    >
+                                                        Check-in
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 <div className="rounded-xl border border-border/60 bg-background p-5">

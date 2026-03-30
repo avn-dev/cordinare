@@ -38,6 +38,8 @@ class EmployeePortalController extends Controller
         }
         $monthEnd = $monthStart->copy()->endOfMonth();
         $this->generateTemplateShiftsForUser($user->id, $timezone, $monthEnd->copy()->addWeeks(8));
+        $todayStart = $now->copy()->startOfDay();
+        $todayEnd = $now->copy()->endOfDay();
 
         $upcomingShifts = Shift::query()
             ->with('site')
@@ -46,6 +48,25 @@ class EmployeePortalController extends Controller
             ->where('starts_at', '>=', $now->copy()->subDays(1))
             ->orderBy('starts_at')
             ->limit(20)
+            ->get();
+
+        $todayShifts = Shift::query()
+            ->with([
+                'site',
+                'timeEntries' => fn ($query) => $query
+                    ->where('user_id', $user->id)
+                    ->orderBy('check_in_at'),
+            ])
+            ->whereHas('assignments', fn ($query) => $query->where('user_id', $user->id))
+            ->where(function ($query) use ($todayStart, $todayEnd) {
+                $query->whereBetween('starts_at', [$todayStart, $todayEnd])
+                    ->orWhereBetween('ends_at', [$todayStart, $todayEnd])
+                    ->orWhere(function ($inner) use ($todayStart, $todayEnd) {
+                        $inner->where('starts_at', '<=', $todayStart)
+                            ->where('ends_at', '>=', $todayEnd);
+                    });
+            })
+            ->orderBy('starts_at')
             ->get();
 
         $calendarShifts = Shift::query()
@@ -142,6 +163,22 @@ class EmployeePortalController extends Controller
                 'status' => $shift->status,
                 'site' => $shift->site ? ['id' => $shift->site->id, 'name' => $shift->site->name] : null,
             ]),
+            'today_shifts' => $todayShifts->map(function (Shift $shift) {
+                $entry = $shift->timeEntries->first();
+
+                return [
+                    'id' => $shift->id,
+                    'title' => $shift->title,
+                    'starts_at' => $shift->starts_at?->toIso8601String(),
+                    'ends_at' => $shift->ends_at?->toIso8601String(),
+                    'status' => $shift->status,
+                    'site' => $shift->site ? ['id' => $shift->site->id, 'name' => $shift->site->name] : null,
+                    'has_time_entry' => (bool) $entry,
+                    'is_open' => (bool) ($entry && ! $entry->check_out_at),
+                    'checked_in_at' => $entry?->check_in_at?->toIso8601String(),
+                    'checked_out_at' => $entry?->check_out_at?->toIso8601String(),
+                ];
+            }),
             'calendar' => [
                 'month' => $monthStart->format('Y-m'),
                 'starts_on' => $monthStart->toDateString(),
