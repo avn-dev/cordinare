@@ -42,6 +42,7 @@ class EmployeePortalController extends Controller
         $upcomingShifts = Shift::query()
             ->with('site')
             ->whereHas('assignments', fn ($query) => $query->where('user_id', $user->id))
+            ->whereDoesntHave('timeEntries', fn ($query) => $query->where('user_id', $user->id))
             ->where('starts_at', '>=', $now->copy()->subDays(1))
             ->orderBy('starts_at')
             ->limit(20)
